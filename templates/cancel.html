@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Cancel Bus Pass{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Cancel Bus Pass</h1>
+
+{% for e in errors %}
+    <div class="msg msg-err">{{ e }}</div>
+{% endfor %}
+
+{% if student and ok %}
+    <div class="msg msg-ok">
+        {{ ok|join(' ') }} Reason saved: {{ student.reason }}
+    </div>
+
+    <div class="detail-box">
+        <h2>{{ student.id }} - {{ student.name }}</h2>
+        <p><span class="card-label">Status:</span> <span class="badge badge-cancelled">{{ student.displayStatus }}</span></p>
+        {% if student.reason %}
+            <p><span class="card-label">Reason:</span> {{ student.reason }}</p>
+        {% endif %}
+    </div>
+
+    <p class="back-row"><a href="{{ url_for('cancel') }}">Cancel another pass</a></p>
+{% elif student %}
+    <div class="detail-box">
+        <h2>{{ student.id }} - {{ student.name }}</h2>
+        <p><span class="card-label">Course:</span> {{ student.course }} | <span class="card-label">Year:</span> {{ student.year }}</p>
+        <p><span class="card-label">Route:</span> {{ student.source }} to {{ student.destination }}</p>
+        <p><span class="card-label">Expiry:</span> {{ student.expiryDate }}</p>
+        <p><span class="card-label">Status:</span> <span class="badge badge-{{ student.displayStatus|lower }}">{{ student.displayStatus }}</span></p>
+    </div>
+
+    <div class="form-box">
+        <h2>Confirm cancellation</h2>
+        <p class="small-note">The pass will be marked Cancelled. The student line stays in the file.</p>
+        <form action="{{ url_for('cancel') }}" method="post">
+            <input type="hidden" name="id" value="{{ student.id }}">
+
+            <label>Reason</label>
+            <select name="reason" required>
+                <option value="">-- choose a reason --</option>
+                <option value="Left college">Left college</option>
+                <option value="Changed route">Changed route</option>
+                <option value="Lost pass">Lost pass</option>
+                <option value="Other">Other</option>
+            </select>
+
+            <label class="check-row">
+                <input type="checkbox" name="confirm" value="yes" required>
+                I confirm that I want to cancel this pass
+            </label>
+
+            <button type="submit" class="btn-danger">Cancel Pass</button>
+        </form>
+    </div>
+{% else %}
+    <div class="form-box">
+        <h2>Find a pass to cancel</h2>
+        <form action="{{ url_for('cancel') }}" method="post">
+            <label>Student ID</label>
+            <input type="text" name="id" required value="{{ studentId }}">
+            <button type="submit">Find</button>
+        </form>
+    </div>
+{% endif %}
+{% endblock %}

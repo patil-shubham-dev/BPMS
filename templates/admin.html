@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - All Students{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Admin Panel</h1>
+
+<div class="count-row">
+    <div class="count-box"><b>{{ counts.total }}</b><span>Total</span></div>
+    <div class="count-box"><b>{{ counts.active }}</b><span>Active</span></div>
+    <div class="count-box"><b>{{ counts.expired }}</b><span>Expired</span></div>
+    <div class="count-box"><b>{{ counts.cancelled }}</b><span>Cancelled</span></div>
+</div>
+
+<div class="table-box">
+    <div class="table-top">
+        <form action="{{ url_for('admin') }}" method="get">
+            <label>Status</label>
+            <select name="status">
+                <option value="All" {% if status == 'All' %}selected{% endif %}>All</option>
+                <option value="Active" {% if status == 'Active' %}selected{% endif %}>Active</option>
+                <option value="Expired" {% if status == 'Expired' %}selected{% endif %}>Expired</option>
+                <option value="Cancelled" {% if status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+            </select>
+            <button type="submit">Filter</button>
+        </form>
+        <a class="btn" href="{{ url_for('adminDownload') }}">Download CSV</a>
+        <a class="back-link" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Course</th>
+            <th>Year</th>
+            <th>Mobile</th>
+            <th>Route</th>
+            <th>Expiry</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+        {% for s in rows %}
+        <tr>
+            <td>{{ s.id }}</td>
+            <td>{{ s.name }}</td>
+            <td>{{ s.course }}</td>
+            <td>{{ s.year }}</td>
+            <td>{{ s.mobile }}</td>
+            <td>{{ s.source }} to {{ s.destination }}</td>
+            <td>{{ s.expiryDate }}</td>
+            <td><span class="badge badge-{{ s.displayStatus|lower }}">{{ s.displayStatus }}</span></td>
+            <td class="action-row">
+                <a class="btn btn-small" href="{{ url_for('renew', id=s.id) }}">Renew</a>
+                <a class="btn btn-small btn-danger" href="{{ url_for('cancel', id=s.id) }}">Cancel</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    {% if not rows %}
+    <p class="small-note">No students for the chosen status.</p>
+    {% endif %}
+</div>
+{% endblock %}

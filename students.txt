@@ -1,1 +1,4 @@
-STU1001|Shubham Patil|19|Sandip university|CSE|2026|8087103916|Nashik Road|Sandip Admin Gate|Active|3 Months
+STU1001|Shubham Patil|19|Sandip university|CSE|2026|8087103916|Nashik Road|Sandip Admin Gate|Cancelled|01-11-2026|01-05-2027|Lost pass
+STU1002|Aarti Deshmukh|19|Sandip University|CSE|2nd|9822345678|Nashik Road|Mumbai Naka|Active|01-11-2026|01-08-2027
+STU1003|Rohit Sharma|20|Sandip University|IT|1st|9765432101|CBS|Adgaon|Cancelled|01-11-2026|01-02-2027|Left college
+STU1004|Meera Patankar|18|Sandip University|IT|1st|9111222333|Pathardi Phata|Indore|Active|01-11-2026|01-02-2027
