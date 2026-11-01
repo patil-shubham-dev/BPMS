@@ -1,0 +1,108 @@
+/* simple styles for the bus pass web page */
+
+/* page background is light grey blue, font is Arial */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #eef2f7;
+    margin: 0;
+    color: #333333;
+}
+
+/* centered dark blue bar at the top */
+h1 {
+    background-color: #1f4e79;
+    color: white;
+    text-align: center;
+    margin: 0;
+    padding: 14px 10px;
+    font-size: 24px;
+}
+
+/* the four form boxes sit together, max width 900px,
+   and wrap into fewer columns on small screens */
+.forms {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 0 10px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 15px;
+}
+
+/* each form is a white box with a small border */
+form {
+    background-color: white;
+    border: 1px solid #b0b8c1;
+    border-radius: 8px;
+    padding: 14px 16px;
+}
+
+form h2 {
+    font-size: 17px;
+    color: #1f4e79;
+    margin: 0 0 12px;
+}
+
+/* inputs have 8px padding and a thin grey border */
+input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px;
+    margin-bottom: 8px;
+    border: 1px solid #b0b8c1;
+    border-radius: 4px;
+    font-family: inherit;
+}
+
+input:focus {
+    border-color: #1f4e79;
+}
+
+/* blue button, slightly darker blue on hover */
+button {
+    background-color: #1f4e79;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 14px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #1a4267;
+}
+
+/* the cancel button is red */
+button.cancel {
+    background-color: #b3261e;
+}
+
+button.cancel:hover {
+    background-color: #8f1e17;
+}
+
+/* the C program output is shown in a white box */
+.result-area {
+    max-width: 900px;
+    margin: 20px auto 0;
+    background-color: white;
+    border: 1px solid #b0b8c1;
+    border-radius: 8px;
+    padding: 12px 16px;
+}
+
+/* output keeps its lines but wraps on small screens */
+.result-area pre {
+    white-space: pre-wrap;
+    font-family: inherit;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* small blue link under the output to go back */
+.back-link {
+    display: inline-block;
+    margin-top: 10px;
+    color: #1f4e79;
+    text-decoration: underline;
+}
