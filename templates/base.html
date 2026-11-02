@@ -6,26 +6,38 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="navbar">
-        <div class="navbar-box">
-            <span class="navbar-title">Bus Pass Management System</span>
-            <div class="navbar-links">
+    <div class="shell">
+        <aside class="sidebar">
+            <div class="brand">
+                <span class="brand-name">Bus Pass MS</span>
+            </div>
+
+            <nav class="side-nav">
                 <a href="{{ url_for('home') }}" {% if request.path == '/' %}class="active"{% endif %}>Home</a>
                 <a href="{{ url_for('register') }}" {% if request.path == '/register' %}class="active"{% endif %}>Register</a>
                 <a href="{{ url_for('search') }}" {% if request.path == '/search' %}class="active"{% endif %}>Search</a>
                 <a href="{{ url_for('renew') }}" {% if request.path == '/renew' %}class="active"{% endif %}>Renew</a>
                 <a href="{{ url_for('cancel') }}" {% if request.path == '/cancel' %}class="active"{% endif %}>Cancel</a>
                 <a href="{{ url_for('admin') }}" {% if request.path in ['/admin', '/admin-login'] %}class="active"{% endif %}>Admin</a>
+            </nav>
+
+            <div class="side-foot">college<br>mini project</div>
+        </aside>
+
+        <div class="main {% block mainclass %}{% endblock %}">
+            <header class="topbar">
+                <span class="topbar-title">Bus Pass Management System</span>
+                <span class="topbar-sub">student bus passes, easy to manage</span>
+            </header>
+
+            <div class="page {% block pageclass %}{% endblock %}">
+                {% block content %}{% endblock %}
+            </div>
+
+            <div class="footer">
+                <p>Bus Pass Management System | college mini project</p>
             </div>
         </div>
-    </div>
-
-    <div class="page {% block pageclass %}{% endblock %}">
-        {% block content %}{% endblock %}
-    </div>
-
-    <div class="footer">
-        <p>Bus Pass Management System | college mini project</p>
     </div>
 </body>
 </html>

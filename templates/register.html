@@ -3,34 +3,48 @@
 {% block title %}Register Student{% endblock %}
 
 {% block content %}
+<h1 class="page-title">Register Student</h1>
+
 {% if student %}
-    <div class="msg msg-ok">
-        Registration successful! Bus Pass ID: {{ student.id }}
-    </div>
+    <div class="msg msg-ok">Registration successful! Bus Pass ID: {{ student.id }}</div>
 
     <div class="pass-card">
-        <h2>Bus Pass Card</h2>
-        <p><span class="card-label">Pass ID:</span> {{ student.id }}</p>
-        <p><span class="card-label">Name:</span> {{ student.name }}</p>
-        <p><span class="card-label">College:</span> {{ student.college }}</p>
-        <p><span class="card-label">Course:</span> {{ student.course }}</p>
-        <p><span class="card-label">Year:</span> {{ student.year }}</p>
-        <p><span class="card-label">Route:</span> {{ student.source }} to {{ student.destination }}</p>
-        <p><span class="card-label">Status:</span> <span class="badge badge-{{ student.displayStatus|lower }}">{{ student.displayStatus }}</span></p>
-        <p><span class="card-label">Issue date:</span> {{ student.issueDate }}</p>
-        <p><span class="card-label">Expiry date:</span> {{ student.expiryDate }}</p>
-        <button onclick="window.print()">Print</button>
+        <div class="pass-head">
+            <span class="pass-title">Bus Pass</span>
+            <span class="pass-college">{{ student.college }}</span>
+        </div>
+
+        <div class="pass-body">
+            <div class="pass-photo">Photo</div>
+
+            <div class="pass-info">
+                <p><span class="card-label">ID:</span> {{ student.id }}</p>
+                <p><span class="card-label">Name:</span> {{ student.name }}</p>
+                <p><span class="card-label">Course:</span> {{ student.course }}</p>
+                <p><span class="card-label">Year:</span> {{ student.year }}</p>
+                <p class="wide"><span class="card-label">Route:</span> {{ student.source }} to {{ student.destination }}</p>
+                <p><span class="card-label">Mobile:</span> {{ student.mobile }}</p>
+                <p><span class="card-label">Status:</span> <span class="badge badge-{{ student.displayStatus|lower }}">{{ student.displayStatus }}</span></p>
+            </div>
+        </div>
+
+        <div class="pass-foot">
+            <span>Issue Date: {{ student.issueDate }}</span>
+            <span>Valid Till: {{ student.expiryDate }}</span>
+        </div>
     </div>
 
-    <p class="back-row"><a href="{{ url_for('register') }}">Register another student</a></p>
+    <div class="pass-actions">
+        <button onclick="window.print()">Print Pass</button>
+        <a class="btn" href="{{ url_for('register') }}">Register Another</a>
+    </div>
 {% else %}
     {% for e in errors %}
         <div class="msg msg-err">{{ e }}</div>
     {% endfor %}
 
-    <div class="form-split">
-        <div class="form-box">
-            <h2>Register Student</h2>
+    <div class="split">
+        <div class="form-card">
             <form action="{{ url_for('register') }}" method="post">
                 <div class="form-grid">
                     <div class="field">
@@ -87,10 +101,13 @@
                 </div>
 
                 <button type="submit">Register</button>
+                <button type="reset" class="btn-plain">Clear</button>
             </form>
         </div>
 
-        <img class="side-img" src="{{ url_for('static', filename='images/register.png') }}" alt="Student registration form">
+        <div class="image-box">
+            <img class="floaty" src="{{ url_for('static', filename='assets/register-student.png') }}" alt="Student registration form with a bus pass">
+        </div>
     </div>
 {% endif %}
 {% endblock %}

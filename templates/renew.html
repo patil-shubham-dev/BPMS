@@ -1,27 +1,19 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block title %}Renew Bus Pass{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Renew Bus Pass</h1>
+<h1 class="page-title">Renew a Pass</h1>
 
 {% for e in errors %}
     <div class="msg msg-err">{{ e }}</div>
 {% endfor %}
 
-{% if student and ok %}
-    <div class="msg msg-ok">
-        {{ ok|join(' ') }}
-    </div>
+{% if student %}
+    {% if ok %}
+        <div class="msg msg-ok">{{ ok|join(' ') }}</div>
+    {% endif %}
 
-    <div class="detail-box">
-        <h2>{{ student.id }} - {{ student.name }}</h2>
-        <p><span class="card-label">New expiry date:</span> {{ student.expiryDate }}</p>
-        <p><span class="card-label">Status:</span> <span class="badge badge-{{ student.displayStatus|lower }}">{{ student.displayStatus }}</span></p>
-    </div>
-
-    <p class="back-row"><a href="{{ url_for('renew') }}">Renew another pass</a></p>
-{% elif student %}
     <div class="detail-box">
         <h2>{{ student.id }} - {{ student.name }}</h2>
         <p><span class="card-label">Course:</span> {{ student.course }} | <span class="card-label">Year:</span> {{ student.year }}</p>
@@ -30,34 +22,83 @@
         <p><span class="card-label">Status:</span> <span class="badge badge-{{ student.displayStatus|lower }}">{{ student.displayStatus }}</span></p>
     </div>
 
-    <div class="form-split">
-        <div class="form-box">
-            <h2>Choose renew time</h2>
-            <p class="small-note">Monthly fee is Rs 200. Time is added to the current expiry.</p>
-            <form action="{{ url_for('renew') }}" method="post">
-                <input type="hidden" name="id" value="{{ student.id }}">
-                <label><input type="radio" name="months" value="1" required> 1 month - Rs 200</label>
-                <label><input type="radio" name="months" value="3"> 3 months - Rs 600</label>
-                <label><input type="radio" name="months" value="6"> 6 months - Rs 1200</label>
-                <label><input type="radio" name="months" value="12"> 12 months - Rs 2400</label>
-                <button type="submit">Renew</button>
-            </form>
-        </div>
+    {% if not ok and student.displayStatus != 'Cancelled' %}
+        <div class="split">
+            <div class="form-card">
+                <h2>Choose renew time</h2>
+                <form action="{{ url_for('renew') }}" method="post">
+                    <input type="hidden" name="id" value="{{ student.id }}">
 
-        <img class="side-img" src="{{ url_for('static', filename='images/renew.png') }}" alt="Bus pass renewal illustration">
+                    <label>Renew for</label>
+                    <select name="months">
+                        <option value="1" {% if months == 1 %}selected{% endif %}>1 month</option>
+                        <option value="3" {% if months == 3 %}selected{% endif %}>3 months</option>
+                        <option value="6" {% if months == 6 %}selected{% endif %}>6 months</option>
+                        <option value="12" {% if months == 12 %}selected{% endif %}>12 months</option>
+                    </select>
+
+            <p class="fee-note">Fee: Rs {{ fee }} (Rs 200 x {{ months }} month{{ 's' if months > 1 else '' }})</p>
+            <p>New expiry date will be: <b>{{ preview }}</b></p>
+
+                    <button type="submit">Renew</button>
+                </form>
+            </div>
+
+            <div class="image-box">
+                <img src="{{ url_for('static', filename='assets/renew-pass.png') }}" alt="Bus pass renewal illustration">
+            </div>
+        </div>
+    {% endif %}
+
+    <p class="back-row"><a class="back-link" href="{{ url_for('renew') }}">Renew another pass</a></p>
+{% elif matches %}
+    <div class="table-box">
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Course</th>
+                <th>Year</th>
+                <th>Current expiry</th>
+                <th>Status</th>
+                <th>Select</th>
+            </tr>
+            {% for s in matches %}
+            <tr>
+                <td>{{ s.id }}</td>
+                <td>{{ s.name }}</td>
+                <td>{{ s.course }}</td>
+                <td>{{ s.year }}</td>
+                <td>{{ s.expiryDate }}</td>
+                <td><span class="badge badge-{{ s.displayStatus|lower }}">{{ s.displayStatus }}</span></td>
+                <td><a class="btn btn-small" href="{{ url_for('renew', id=s.id) }}">Select</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+        <p class="small-note">{{ matches|length }} matches found, select one to renew</p>
     </div>
 {% else %}
-    <div class="form-split">
-        <div class="form-box">
+    <div class="split">
+        <div class="form-card">
             <h2>Find a pass to renew</h2>
             <form action="{{ url_for('renew') }}" method="post">
-                <label>Student ID</label>
-                <input type="text" name="id" required value="{{ studentId }}">
+                <label>Find by</label>
+                <select name="field">
+                    <option value="id" {% if field == 'id' %}selected{% endif %}>Student ID</option>
+                    <option value="name" {% if field == 'name' %}selected{% endif %}>Name</option>
+                    <option value="course" {% if field == 'course' %}selected{% endif %}>Course</option>
+                </select>
+
+                <label>Text</label>
+                <input type="text" name="text" value="{{ text }}">
+
                 <button type="submit">Find</button>
             </form>
         </div>
 
-        <img class="side-img" src="{{ url_for('static', filename='images/renew.png') }}" alt="Bus pass renewal illustration">
+        <div class="image-box">
+            <img src="{{ url_for('static', filename='assets/renew-pass.png') }}" alt="Bus pass renewal illustration">
+        </div>
     </div>
 {% endif %}
 {% endblock %}

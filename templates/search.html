@@ -3,9 +3,11 @@
 {% block title %}Search Students{% endblock %}
 
 {% block content %}
-<div class="form-split">
-    <div class="form-box">
-        <h2>Search Students</h2>
+<h1 class="page-title">Search Students</h1>
+
+<div class="split">
+    <div class="form-card">
+        <h2>Search by</h2>
         <form action="{{ url_for('search') }}" method="post">
             <label>Search by</label>
             <select name="field">
@@ -23,7 +25,9 @@
         </form>
     </div>
 
-    <img class="side-img" src="{{ url_for('static', filename='images/student.png') }}" alt="Student with a backpack">
+    <div class="image-box">
+        <img class="floaty" src="{{ url_for('static', filename='assets/search-student.png') }}" alt="Search Student page with a bus pass">
+    </div>
 </div>
 
 {% if results %}
@@ -38,6 +42,7 @@
             <th>Mobile</th>
             <th>Expiry</th>
             <th>Status</th>
+            <th>Actions</th>
         </tr>
         {% for s in results %}
         <tr>
@@ -49,12 +54,18 @@
             <td>{{ s.mobile }}</td>
             <td>{{ s.expiryDate }}</td>
             <td><span class="badge badge-{{ s.displayStatus|lower }}">{{ s.displayStatus }}</span></td>
+            <td class="action-row">
+                {% if s.displayStatus != 'Cancelled' %}
+                    <a class="btn btn-small" href="{{ url_for('renew', id=s.id) }}">Renew</a>
+                {% endif %}
+                <a class="btn btn-small btn-danger" href="{{ url_for('cancel', id=s.id) }}">Cancel</a>
+            </td>
         </tr>
         {% endfor %}
     </table>
     <p class="small-note">{{ results|length }} student(s) found</p>
 </div>
 {% elif text %}
-<div class="msg msg-empty">No student found</div>
+<div class="msg msg-err">No student found for "{{ text }}"</div>
 {% endif %}
 {% endblock %}

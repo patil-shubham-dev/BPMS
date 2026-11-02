@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import csv
 import io
 import os
@@ -15,6 +15,9 @@ program = os.path.join(folder, "buspass.exe")
 # simple login for demo only, not for real use (password is in the code)
 adminUser = "admin"
 adminPass = "buspass123"
+
+# must match FEE_PER_MONTH in buspass.c, used for the renew preview
+FEE_PER_MONTH = 200
 
 
 # runs the C program with the given arguments and returns its output
@@ -42,6 +45,63 @@ def dateValue(text):
         return datetime.strptime(text, "%d-%m-%Y").date()
     except ValueError:
         return None
+
+
+# true for leap years, needed when a renewal passes through 29 February
+def isLeap(year):
+    return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+
+
+# adds months to "dd-mm-yyyy" text the same way the C addMonths does:
+# a day that does not exist in the short month rolls into the next month
+def addMonthsText(fromDate, months):
+    day, month, year = [int(part) for part in fromDate.split("-")]
+    pos = month - 1 + months
+    year = year + pos // 12
+    month = pos % 12
+    daysIn = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+
+    if month == 1 and isLeap(year):
+        daysIn[1] = 29
+
+    if day > daysIn[month]:
+        day = day - daysIn[month]
+        month = month + 1
+
+    return "%02d-%02d-%04d" % (day, month + 1, year)
+
+
+# the expiry a pass would get when renewed today, for the preview line
+# same rule as the C program: an expired pass starts counting from today
+def renewalPreview(student, months):
+    expiry = dateValue(student["expiryDate"])
+
+    if expiry is None:
+        return ""
+
+    today = datetime.now().date()
+
+    if expiry < today:
+        base = today.strftime("%d-%m-%Y")
+    else:
+        base = student["expiryDate"]
+
+    return addMonthsText(base, months)
+
+
+# passes that are still Active and expire within the next few days
+def expiringSoon(students, days=7):
+    soon = []
+    today = datetime.now().date()
+
+    for student in students:
+        expiry = dateValue(student["expiryDate"])
+
+        if expiry is not None and student["displayStatus"] == "Active" \
+                and today <= expiry <= today + timedelta(days=days):
+            soon.append(student)
+
+    return soon
 
 
 # decides what status the page should show
@@ -103,9 +163,37 @@ def allStudents():
     return readOutput(runProgram("list"))["students"]
 
 
+# the exe messages are short, turn them into friendly sentences for pages
+def friendlyErrors(errors):
+    nice = []
+
+    for message in errors:
+        if message.startswith("Could not run the bus pass program"):
+            nice.append("The bus pass program could not run. Is buspass.exe in the project folder?")
+        else:
+            nice.append(message)
+
+    return nice
+
+
+def friendlyOk(okMessages):
+    nice = []
+
+    for message in okMessages:
+        if message.startswith("Cancelled "):
+            nice.append("Pass cancelled (" + message[10:] + ").")
+        else:
+            nice.append(message)
+
+    return nice
+
+
 # finds one student by exact ID, returns None when not found
-def lookupStudent(studentId):
-    for student in allStudents():
+def lookupStudent(studentId, students=None):
+    if students is None:
+        students = allStudents()
+
+    for student in students:
         if student["id"] == studentId:
             return student
 
@@ -179,100 +267,144 @@ def search():
     return render_template("search.html", results=results, field=field, text=text)
 
 
+# the renew page works in two steps:
+# step 1: find the pass by ID, name or course
+# step 2: choose months and renew. table row links jump straight to step 2
 @app.route("/renew", methods=["GET", "POST"])
 def renew():
-    student = None
+    students = allStudents()
     okMessages = []
     errorMessages = []
-    studentId = ""
+    matches = []
+    student = None
+    field = "id"
+    text = ""
+    months = 1
+    preview = ""
 
-    if request.method == "POST":
+    if request.method == "POST" and request.form.get("months", "") != "":
+        # step 2: renew the pass for the chosen months
         studentId = request.form.get("id", "")
-        monthsText = request.form.get("months", "")
 
-        if monthsText == "":
-            # step 1: only the ID was sent, so find the student first
-            student = lookupStudent(studentId)
+        try:
+            months = int(request.form.get("months", "1"))
+        except ValueError:
+            months = 1
 
-            if student is None:
-                errorMessages = ["No student found with ID " + (studentId if studentId != "" else "(empty)")]
-            elif student["status"] == "Cancelled":
-                errorMessages = ["This pass is cancelled, cancelled passes cannot be renewed"]
-                student = None
+        result = readOutput(runProgram("renew", studentId, str(months)))
+
+        if len(result["students"]) > 0:
+            student = result["students"][0]
+            okMessages = friendlyOk(result["ok"])
         else:
-            # step 2: ID and months together
-            out = runProgram("renew", studentId, monthsText)
-            result = readOutput(out)
+            errorMessages = friendlyErrors(result["errors"])
+            student = lookupStudent(studentId, students)
+    elif request.method == "POST":
+        # step 1: find by the chosen field
+        field = request.form.get("field", "id")
+        text = request.form.get("text", "")
 
-            if len(result["students"]) > 0:
-                student = result["students"][0]
-                okMessages = result["ok"]
-            else:
-                errorMessages = result["errors"]
-                student = lookupStudent(studentId)
+        if text.strip() == "":
+            errorMessages = ["Please type what to search for."]
+        else:
+            matches = readOutput(runProgram("search", field, text))["students"]
+
+            if len(matches) == 1:
+                # one match goes straight to the details step
+                student = matches[0]
+                matches = []
+
+                if student["status"] == "Cancelled":
+                    errorMessages = ["This pass is cancelled, cancelled passes cannot be renewed"]
+
+            elif len(matches) == 0:
+                errorMessages = ["No student found for those details."]
     else:
-        # an admin row link lands here: /renew?id=STU1002
+        # a table link lands here: /renew?id=STU1002
         studentId = request.args.get("id", "")
 
         if studentId != "":
-            student = lookupStudent(studentId)
+            student = lookupStudent(studentId, students)
 
             if student is None:
                 errorMessages = ["No student found with ID " + studentId]
             elif student["status"] == "Cancelled":
                 errorMessages = ["This pass is cancelled, cancelled passes cannot be renewed"]
-                student = None
+
+    # the details step shows the fee and the expiry preview for the chosen months
+    if student is not None and len(okMessages) == 0 and student["status"] != "Cancelled":
+        preview = renewalPreview(student, months)
 
     return render_template(
-        "renew.html", student=student, ok=okMessages, errors=errorMessages, studentId=studentId
+        "renew.html",
+        student=student, ok=okMessages, errors=errorMessages, matches=matches,
+        field=field, text=text, months=months, fee=FEE_PER_MONTH * months, preview=preview,
     )
 
 
+# the cancel page works like the renew page: find the pass first,
+# then confirm with a reason. the record is never deleted
 @app.route("/cancel", methods=["GET", "POST"])
 def cancel():
-    student = None
+    students = allStudents()
     okMessages = []
     errorMessages = []
-    studentId = ""
+    matches = []
+    student = None
+    field = "id"
+    text = ""
 
-    if request.method == "POST":
+    if request.method == "POST" and request.form.get("reason", "") != "":
+        # step 2: cancel the pass with the chosen reason
         studentId = request.form.get("id", "")
         reason = request.form.get("reason", "")
 
-        if reason == "":
-            # step 1: only the ID was sent
-            student = lookupStudent(studentId)
-
-            if student is None:
-                errorMessages = ["No student found with ID " + (studentId if studentId != "" else "(empty)")]
-            elif student["status"] == "Cancelled":
-                errorMessages = ["This pass is already cancelled"]
-                student = None
+        if request.form.get("confirm", "") != "yes":
+            errorMessages = ["Please tick the confirm box to cancel the pass."]
+            student = lookupStudent(studentId, students)
         else:
-            # step 2: ID and reason together
-            out = runProgram("cancel", studentId, reason)
-            result = readOutput(out)
+            result = readOutput(runProgram("cancel", studentId, reason))
 
             if len(result["students"]) > 0:
                 student = result["students"][0]
-                okMessages = result["ok"]
+                okMessages = friendlyOk(result["ok"])
             else:
-                errorMessages = result["errors"]
+                errorMessages = friendlyErrors(result["errors"])
+    elif request.method == "POST":
+        # step 1: find by the chosen field
+        field = request.form.get("field", "id")
+        text = request.form.get("text", "")
+
+        if text.strip() == "":
+            errorMessages = ["Please type what to search for."]
+        else:
+            matches = readOutput(runProgram("search", field, text))["students"]
+
+            if len(matches) == 1:
+                # one match goes straight to the details step
+                student = matches[0]
+                matches = []
+
+                if student["status"] == "Cancelled":
+                    errorMessages = ["This pass is already cancelled"]
+
+            elif len(matches) == 0:
+                errorMessages = ["No student found for those details."]
     else:
-        # an admin row link lands here: /cancel?id=STU1002
+        # a table link lands here: /cancel?id=STU1002
         studentId = request.args.get("id", "")
 
         if studentId != "":
-            student = lookupStudent(studentId)
+            student = lookupStudent(studentId, students)
 
             if student is None:
                 errorMessages = ["No student found with ID " + studentId]
             elif student["status"] == "Cancelled":
                 errorMessages = ["This pass is already cancelled"]
-                student = None
 
     return render_template(
-        "cancel.html", student=student, ok=okMessages, errors=errorMessages, studentId=studentId
+        "cancel.html",
+        student=student, ok=okMessages, errors=errorMessages, matches=matches, field=field, text=text,
     )
 
 
@@ -300,13 +432,21 @@ def admin():
 
     students = allStudents()
     status = request.args.get("status", "All")
+    q = request.args.get("q", "")
     rows = students
 
     if status in ("Active", "Expired", "Cancelled"):
         rows = [student for student in students if student["displayStatus"] == status]
 
+    # the text box filters by part of the name or the ID
+    if q.strip() != "":
+        lower = q.strip().lower()
+        rows = [student for student in rows
+                if lower in student["name"].lower() or lower in student["id"].lower()]
+
     return render_template(
-        "admin.html", rows=rows, counts=countStudents(students), status=status
+        "admin.html", rows=rows, counts=countStudents(students), status=status, q=q,
+        expiring=expiringSoon(students),
     )
 
 

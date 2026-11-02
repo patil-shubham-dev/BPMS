@@ -1,72 +1,108 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block title %}Cancel Bus Pass{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Cancel Bus Pass</h1>
+<h1 class="page-title">Cancel a Pass</h1>
 
 {% for e in errors %}
     <div class="msg msg-err">{{ e }}</div>
 {% endfor %}
 
-{% if student and ok %}
-    <div class="msg msg-ok">
-        {{ ok|join(' ') }} Reason saved: {{ student.reason }}
-    </div>
+{% if student %}
+    {% if ok %}
+        <div class="msg msg-ok">{{ ok|join(' ') }}</div>
+    {% endif %}
 
     <div class="detail-box">
         <h2>{{ student.id }} - {{ student.name }}</h2>
-        <p><span class="card-label">Status:</span> <span class="badge badge-cancelled">{{ student.displayStatus }}</span></p>
+        <p><span class="card-label">Course:</span> {{ student.course }} | <span class="card-label">Year:</span> {{ student.year }}</p>
+        <p><span class="card-label">Route:</span> {{ student.source }} to {{ student.destination }}</p>
+        <p><span class="card-label">Status:</span> <span class="badge badge-{{ student.displayStatus|lower }}">{{ student.displayStatus }}</span></p>
         {% if student.reason %}
             <p><span class="card-label">Reason:</span> {{ student.reason }}</p>
         {% endif %}
     </div>
 
-    <p class="back-row"><a href="{{ url_for('cancel') }}">Cancel another pass</a></p>
-{% elif student %}
-    <div class="detail-box">
-        <h2>{{ student.id }} - {{ student.name }}</h2>
-        <p><span class="card-label">Course:</span> {{ student.course }} | <span class="card-label">Year:</span> {{ student.year }}</p>
-        <p><span class="card-label">Route:</span> {{ student.source }} to {{ student.destination }}</p>
-        <p><span class="card-label">Expiry:</span> {{ student.expiryDate }}</p>
-        <p><span class="card-label">Status:</span> <span class="badge badge-{{ student.displayStatus|lower }}">{{ student.displayStatus }}</span></p>
+    {% if not ok and student.displayStatus != 'Cancelled' %}
+        <div class="split">
+            <div class="form-card">
+                <h2>Confirm cancellation</h2>
+                <p class="small-note">The pass record stays in the file, only its status becomes Cancelled.</p>
+
+                <form action="{{ url_for('cancel') }}" method="post">
+                    <input type="hidden" name="id" value="{{ student.id }}">
+
+                    <label>Reason</label>
+                    <select name="reason" required>
+                        <option value="Left college">Left college</option>
+                        <option value="Changed route">Changed route</option>
+                        <option value="Lost pass">Lost pass</option>
+                        <option value="Other">Other</option>
+                    </select>
+
+                    <label class="check-row">
+                        <input type="checkbox" name="confirm" value="yes" required>
+                        I confirm I want to cancel this pass
+                    </label>
+
+                    <button type="submit" class="btn-danger">Cancel Pass</button>
+                </form>
+            </div>
+
+        <div class="image-box">
+            <img src="{{ url_for('static', filename='assets/cancel-pass.png') }}" alt="Cancel bus pass with a cancelled stamp">
+        </div>
     </div>
+    {% endif %}
 
-    <div class="form-box">
-        <h2>Confirm cancellation</h2>
-        <p class="small-note">The pass will be marked Cancelled. The student line stays in the file.</p>
-        <form action="{{ url_for('cancel') }}" method="post">
-            <input type="hidden" name="id" value="{{ student.id }}">
-
-            <label>Reason</label>
-            <select name="reason" required>
-                <option value="">-- choose a reason --</option>
-                <option value="Left college">Left college</option>
-                <option value="Changed route">Changed route</option>
-                <option value="Lost pass">Lost pass</option>
-                <option value="Other">Other</option>
-            </select>
-
-            <label class="check-row">
-                <input type="checkbox" name="confirm" value="yes" required>
-                I confirm that I want to cancel this pass
-            </label>
-
-            <button type="submit" class="btn-danger">Cancel Pass</button>
-        </form>
+    <p class="back-row"><a class="back-link" href="{{ url_for('cancel') }}">Cancel another pass</a></p>
+{% elif matches %}
+    <div class="table-box">
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Course</th>
+                <th>Year</th>
+                <th>Status</th>
+                <th>Select</th>
+            </tr>
+            {% for s in matches %}
+            <tr>
+                <td>{{ s.id }}</td>
+                <td>{{ s.name }}</td>
+                <td>{{ s.course }}</td>
+                <td>{{ s.year }}</td>
+                <td><span class="badge badge-{{ s.displayStatus|lower }}">{{ s.displayStatus }}</span></td>
+                <td><a class="btn btn-small" href="{{ url_for('cancel', id=s.id) }}">Select</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+        <p class="small-note">{{ matches|length }} matches found, select one to cancel</p>
     </div>
 {% else %}
-<div class="form-split">
-    <div class="form-box">
-        <h2>Find a pass to cancel</h2>
-        <form action="{{ url_for('cancel') }}" method="post">
-            <label>Student ID</label>
-            <input type="text" name="id" required value="{{ studentId }}">
-            <button type="submit">Find</button>
-        </form>
-    </div>
+    <div class="split">
+        <div class="form-card">
+            <h2>Find a pass to cancel</h2>
+            <form action="{{ url_for('cancel') }}" method="post">
+                <label>Find by</label>
+                <select name="field">
+                    <option value="id" {% if field == 'id' %}selected{% endif %}>Student ID</option>
+                    <option value="name" {% if field == 'name' %}selected{% endif %}>Name</option>
+                    <option value="course" {% if field == 'course' %}selected{% endif %}>Course</option>
+                </select>
 
-    <img class="side-img side-img-sm" src="{{ url_for('static', filename='images/bus.png') }}" alt="College bus on the road">
-</div>
+                <label>Text</label>
+                <input type="text" name="text" value="{{ text }}">
+
+                <button type="submit">Find</button>
+            </form>
+        </div>
+
+        <div class="image-box">
+            <img src="{{ url_for('static', filename='assets/cancel-pass.png') }}" alt="Cancel bus pass with a cancelled stamp">
+        </div>
+    </div>
 {% endif %}
 {% endblock %}
