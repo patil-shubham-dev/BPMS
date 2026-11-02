@@ -30,26 +30,34 @@
         <p><span class="card-label">Status:</span> <span class="badge badge-{{ student.displayStatus|lower }}">{{ student.displayStatus }}</span></p>
     </div>
 
-    <div class="form-box">
-        <h2>Choose renew time</h2>
-        <p class="small-note">Monthly fee is Rs 200. Time is added to the current expiry.</p>
-        <form action="{{ url_for('renew') }}" method="post">
-            <input type="hidden" name="id" value="{{ student.id }}">
-            <label><input type="radio" name="months" value="1" required> 1 month - Rs 200</label>
-            <label><input type="radio" name="months" value="3"> 3 months - Rs 600</label>
-            <label><input type="radio" name="months" value="6"> 6 months - Rs 1200</label>
-            <label><input type="radio" name="months" value="12"> 12 months - Rs 2400</label>
-            <button type="submit">Renew</button>
-        </form>
+    <div class="form-split">
+        <div class="form-box">
+            <h2>Choose renew time</h2>
+            <p class="small-note">Monthly fee is Rs 200. Time is added to the current expiry.</p>
+            <form action="{{ url_for('renew') }}" method="post">
+                <input type="hidden" name="id" value="{{ student.id }}">
+                <label><input type="radio" name="months" value="1" required> 1 month - Rs 200</label>
+                <label><input type="radio" name="months" value="3"> 3 months - Rs 600</label>
+                <label><input type="radio" name="months" value="6"> 6 months - Rs 1200</label>
+                <label><input type="radio" name="months" value="12"> 12 months - Rs 2400</label>
+                <button type="submit">Renew</button>
+            </form>
+        </div>
+
+        <img class="side-img" src="{{ url_for('static', filename='images/renew.png') }}" alt="Bus pass renewal illustration">
     </div>
 {% else %}
-    <div class="form-box">
-        <h2>Find a pass to renew</h2>
-        <form action="{{ url_for('renew') }}" method="post">
-            <label>Student ID</label>
-            <input type="text" name="id" required value="{{ studentId }}">
-            <button type="submit">Find</button>
-        </form>
+    <div class="form-split">
+        <div class="form-box">
+            <h2>Find a pass to renew</h2>
+            <form action="{{ url_for('renew') }}" method="post">
+                <label>Student ID</label>
+                <input type="text" name="id" required value="{{ studentId }}">
+                <button type="submit">Find</button>
+            </form>
+        </div>
+
+        <img class="side-img" src="{{ url_for('static', filename='images/renew.png') }}" alt="Bus pass renewal illustration">
     </div>
 {% endif %}
 {% endblock %}

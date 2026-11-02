@@ -56,6 +56,7 @@
         </form>
     </div>
 {% else %}
+<div class="form-split">
     <div class="form-box">
         <h2>Find a pass to cancel</h2>
         <form action="{{ url_for('cancel') }}" method="post">
@@ -64,5 +65,8 @@
             <button type="submit">Find</button>
         </form>
     </div>
+
+    <img class="side-img side-img-sm" src="{{ url_for('static', filename='images/bus.png') }}" alt="College bus on the road">
+</div>
 {% endif %}
 {% endblock %}

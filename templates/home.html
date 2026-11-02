@@ -1,10 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="welcome-card">
-    <h1>Welcome to Bus Pass Management</h1>
-    <p>Students can apply for a new college bus pass, search the list,
-    renew a pass before it expires, or cancel one they no longer need.</p>
+<div class="hero-row">
+    <div class="welcome-card">
+        <h1>Welcome to Bus Pass Management</h1>
+        <p>Students can apply for a new college bus pass, search the list,
+        renew a pass before it expires, or cancel one they no longer need.</p>
+    </div>
+
+    <img class="home-img" src="{{ url_for('static', filename='images/bus-pass.png') }}" alt="Bus pass card with validity details">
 </div>
 
 <div class="card-row">

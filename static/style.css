@@ -1,79 +1,73 @@
-/* styles for the bus pass website, dark blue + light grey blue theme */
+/* Bus pass website styles - dark blue + light grey blue theme */
 
-/* padding and border count inside the width, so boxes do not overflow */
-* {
-    box-sizing: border-box;
-}
+/* padding and border count inside the width */
+* { box-sizing: border-box; }
 
-/* page background, Arial font, dark text */
+/* full height page, only the middle part scrolls */
+html, body { height: 100%; }
+
 body {
     font-family: Arial, sans-serif;
     background-color: #eef2f7;
-    color: #333333;
+    color: #333;
     margin: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
-/* the dark blue navbar at the top, links wrap on small screens */
-.navbar {
-    background-color: #1f4e79;
-}
+/* dark blue navbar at the top */
+.navbar { background-color: #1f4e79; }
 
 .navbar-box {
     max-width: 1100px;
     margin: 0 auto;
-    padding: 10px 16px;
+    padding: 6px 16px;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
 }
 
-.navbar-title {
-    color: white;
-    font-size: 20px;
-}
+.navbar-title { color: white; font-size: 18px; }
+.navbar-links { display: flex; flex-wrap: wrap; gap: 2px; }
+.navbar-links a { color: white; text-decoration: none; padding: 5px 9px; border-radius: 4px; font-size: 14px; }
+.navbar-links a:hover { background-color: #16405f; }
 
-.navbar-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-}
+/* the current page link is a lighter blue */
+.navbar-links a.active { background-color: #2a6396; }
 
-.navbar-links a {
-    color: white;
-    text-decoration: none;
-    padding: 6px 10px;
-}
-
-.navbar-links a:hover {
-    background-color: #16405f;
-    border-radius: 4px;
-}
-
-/* the main area in the middle of the page */
+/* the middle area, the only part that scrolls */
 .page {
+    flex: 1 1 auto;
+    width: 100%;
     max-width: 1100px;
     margin: 0 auto;
-    padding: 18px 16px 30px;
+    padding: 10px 16px 14px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
-.page-title {
-    color: #1f4e79;
-    margin-top: 0;
-}
+/* short pages centre themselves in the leftover middle space */
+.page > :first-child { margin-top: auto; }
+.page > :last-child { margin-bottom: auto; }
 
-/* footer bar at the bottom */
+/* admin list gets a taller table */
+.page-admin .table-box { max-height: 380px; }
+
+/* slim footer at the bottom */
 .footer {
+    flex: 0 0 auto;
+    height: 35px;
+    line-height: 35px;
     background-color: #1f4e79;
     color: white;
     text-align: center;
-    padding: 10px;
 }
 
-.footer p {
-    margin: 0;
-    font-size: 13px;
-}
+.footer p { margin: 0; font-size: 12px; }
+.page-title { color: #1f4e79; font-size: 20px; margin: 0 0 8px; }
 
 /* white boxes used on every page */
 .welcome-card,
@@ -84,308 +78,151 @@ body {
     background-color: white;
     border: 1px solid #c5cfdc;
     border-radius: 6px;
-    padding: 14px 18px;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
-.welcome-card h1 {
-    color: #1f4e79;
-    margin: 0 0 6px;
-    font-size: 24px;
-}
+.welcome-card, .form-box, .detail-box, .login-box { padding: 10px 14px; }
+
+/* home page: welcome text and pass image side by side */
+.hero-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 12px; }
+.hero-row .welcome-card { flex: 1 1 300px; margin-bottom: 0; }
+.hero-row .welcome-card h1 { color: #1f4e79; margin: 0 0 6px; font-size: 20px; }
+
+/* images, sized by height, never stretched or clipped */
+.home-img { height: 220px; width: auto; object-fit: contain; }
+.side-img { height: 220px; width: auto; object-fit: contain; }
+.side-img-sm { height: 180px; }
+.top-img { display: block; height: 200px; width: auto; margin: 0 auto 8px; object-fit: contain; }
 
 /* the four link cards on the home page */
-.card-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 16px;
-}
+.card-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+.card { flex: 1 1 220px; padding: 10px 12px; display: flex; flex-direction: column; }
+.card h2 { color: #1f4e79; font-size: 16px; margin: 0 0 4px; }
+.card p { margin: 0 0 8px; }
+.card .btn { margin-top: auto; }
 
-.card {
+/* small count boxes (Total, Active, Expired, Cancelled) */
+.count-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.count-box { flex: 1 1 90px; padding: 6px 14px; text-align: center; }
+.card, .count-box { background-color: white; border: 1px solid #c5cfdc; border-radius: 6px; }
+.count-box b { font-size: 18px; color: #1f4e79; display: block; }
+.count-box span { font-size: 12px; }
+
+/* forms: form box and image side by side */
+.form-split { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+.form-split .form-box { flex: 1 1 300px; margin-bottom: 0; }
+.form-box h2 { color: #1f4e79; font-size: 18px; margin: 0 0 6px; }
+
+/* register form: two columns, three on wide screens */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; }
+@media (min-width: 1000px) { .form-grid { grid-template-columns: 1fr 1fr 1fr; } }
+
+/* labels on their own line with inputs below */
+label { display: block; margin: 6px 0 2px; font-size: 13px; }
+.field label { margin-top: 0; }
+
+input, select {
+    width: 100%;
+    padding: 6px;
+    border: 1px solid #9aa9bb;
+    border-radius: 4px;
     background-color: white;
-    border: 1px solid #c5cfdc;
-    border-radius: 6px;
-    padding: 14px 16px;
-    flex: 1 1 240px;
-}
-
-.card h2 {
-    color: #1f4e79;
-    font-size: 18px;
-    margin: 0 0 6px;
-}
-
-/* the small count boxes (Total, Active, Expired, Cancelled) */
-.count-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-.count-box {
-    background-color: white;
-    border: 1px solid #c5cfdc;
-    border-radius: 6px;
-    padding: 10px 20px;
-    text-align: center;
-    flex: 1 1 100px;
-}
-
-.count-box b {
-    font-size: 22px;
-    color: #1f4e79;
-    display: block;
-}
-
-.count-box span {
+    font-family: inherit;
     font-size: 13px;
 }
 
-/* forms: labels on their own line with inputs below */
-label {
-    display: block;
-    margin: 10px 0 3px;
-    font-size: 14px;
-}
-
-input,
-select {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 8px;
-    border: 1px solid #b7c1cf;
-    border-radius: 4px;
-    font-family: inherit;
-    font-size: 14px;
-}
-
-input:focus,
-select:focus {
-    border-color: #1f4e79;
-}
-
-/* radio and checkbox label lines are smaller */
-label.check-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-label input[type="radio"],
-label input[type="checkbox"] {
-    width: auto;
-}
+input:focus, select:focus { border-color: #1f4e79; }
+label.check-row { display: flex; align-items: center; gap: 8px; }
+label input[type="radio"], label input[type="checkbox"] { width: auto; }
 
 /* blue buttons */
-button,
-.btn {
+button, .btn {
     display: inline-block;
     background-color: #1f4e79;
     color: white;
     border: none;
     border-radius: 4px;
-    padding: 8px 14px;
+    padding: 6px 12px;
     font-family: inherit;
-    font-size: 14px;
+    font-size: 13px;
     text-decoration: none;
     cursor: pointer;
-    margin-top: 10px;
+    margin-top: 8px;
     width: auto;
 }
 
-button:hover,
-.btn:hover {
-    background-color: #16405f;
-}
+button:hover, .btn:hover { background-color: #16405f; }
 
 /* red button for cancel work */
-.btn-danger {
-    background-color: #b3261e;
-}
+.btn-danger { background-color: #b3261e; }
+.btn-danger:hover { background-color: #8f1e17; }
 
-.btn-danger:hover {
-    background-color: #8f1e17;
-}
+/* small buttons inside admin table rows */
+.btn-small { padding: 3px 8px; margin-top: 0; font-size: 12px; }
 
-/* smaller buttons inside admin table rows */
-.btn-small {
-    padding: 4px 10px;
-    margin-top: 0;
-    font-size: 13px;
-}
+/* tables: only the box scrolls, not the page */
+.table-box { max-height: 300px; overflow: auto; }
+table { width: 100%; border-collapse: collapse; }
 
-/* tables have light row lines */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 6px;
-}
-
-th,
-td {
-    padding: 8px 6px;
-    border-bottom: 1px solid #dde4ec;
-    text-align: left;
-    font-size: 14px;
-}
-
+/* the header row stays on top while the table scrolls */
 th {
-    border-bottom: 2px solid #1f4e79;
+    position: sticky;
+    top: 0;
+    background-color: white;
     color: #1f4e79;
+    border-bottom: 2px solid #1f4e79;
 }
 
-.table-top {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
-    margin-top: 6px;
-}
-
-.table-top form,
-.table-top label {
-    margin: 0;
-}
-
-.table-top select,
-.table-top button {
-    width: auto;
-    margin-top: 0;
-}
-
-.table-top button {
-    margin-top: 0;
-}
-
-.action-row a {
-    display: inline-block;
-    margin-right: 4px;
-}
+th, td { padding: 5px 6px; border-bottom: 1px solid #dde4ec; text-align: left; font-size: 13px; }
+.table-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 8px; }
+.table-top form, .table-top label { margin: 0; }
+.table-top select, .table-top button { width: auto; margin-top: 0; }
+.action-row a { display: inline-block; margin-right: 3px; }
 
 /* status badges: green active, orange expired, red cancelled */
-.badge {
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-}
-
-.badge-active {
-    color: #1e7d34;
-    background-color: #e7f4ea;
-}
-
-.badge-expired {
-    color: #a05a00;
-    background-color: #fdf2df;
-}
-
-.badge-cancelled {
-    color: #b3261e;
-    background-color: #fbe7e5;
-}
+.badge { padding: 1px 7px; border-radius: 4px; font-size: 12px; }
+.badge-active { color: #1e7d34; background-color: #e7f4ea; }
+.badge-expired { color: #a05a00; background-color: #fdf2df; }
+.badge-cancelled { color: #b3261e; background-color: #fbe7e5; }
 
 /* success and error message boxes */
-.msg {
-    border-radius: 4px;
-    padding: 10px 14px;
-    margin-bottom: 12px;
-}
-
-.msg-ok {
-    color: #1e7d34;
-    background-color: #e7f4ea;
-    border: 1px solid #9ed3aa;
-}
-
-.msg-err {
-    color: #b3261e;
-    background-color: #fbe7e5;
-    border: 1px solid #e6a9a5;
-}
-
-.msg-empty {
-    color: #555555;
-    background-color: white;
-    border: 1px solid #c5cfdc;
-}
+.msg { border-radius: 4px; padding: 8px 12px; margin-bottom: 10px; }
+.msg-ok { color: #1e7d34; background-color: #e7f4ea; border: 1px solid #9ed3aa; }
+.msg-err { color: #b3261e; background-color: #fbe7e5; border: 1px solid #e6a9a5; }
+.msg-empty { color: #555; background-color: white; border: 1px solid #c5cfdc; }
 
 /* the printed bus pass card */
 .pass-card {
     background-color: white;
     border: 2px solid #1f4e79;
     border-radius: 6px;
-    padding: 16px 20px;
+    padding: 14px 18px;
     max-width: 460px;
     margin-bottom: 10px;
 }
 
 .pass-card h2 {
     color: #1f4e79;
-    margin: 0 0 10px;
+    margin: 0 0 8px;
     border-bottom: 2px solid #1f4e79;
-    padding-bottom: 8px;
+    padding-bottom: 6px;
 }
 
-.pass-card p {
-    margin: 4px 0;
-}
+.pass-card p, .detail-box p { margin: 3px 0; }
+.card-label { color: #1f4e79; font-weight: bold; }
+.detail-box h2 { color: #1f4e79; margin-top: 0; }
+.small-note { color: #6a7683; font-size: 12px; }
+.back-row { margin-top: 8px; }
+.back-link { color: #1f4e79; text-decoration: underline; }
 
-.card-label {
-    color: #1f4e79;
-    font-weight: bold;
-}
+/* small centered admin login box */
+.login-box { max-width: 330px; margin: 0 auto; }
 
-.detail-box h2 {
-    color: #1f4e79;
-    margin-top: 0;
-}
-
-.detail-box p {
-    margin: 4px 0;
-}
-
-/* small grey note text */
-.small-note {
-    color: #6a7683;
-    font-size: 13px;
-}
-
-.back-row {
-    margin-top: 10px;
-}
-
-.back-link {
-    color: #1f4e79;
-    text-decoration: underline;
-}
-
-/* the small centered admin login box */
-.login-box {
-    max-width: 330px;
-    margin: 40px auto;
-}
-
-.login-box .small-note {
-    margin-top: 10px;
-}
-
-/* printing: only the bus pass card is printed,
-   navbar, footer, buttons and forms are hidden */
+/* printing: only the bus pass card is printed */
 @media print {
-    .navbar,
-    .footer,
-    button,
-    .back-row {
-        display: none;
-    }
-
-    body {
-        background-color: white;
-    }
-
-    .pass-card {
-        border: 2px solid #1f4e79;
-        max-width: 100%;
-    }
+    .navbar, .footer, button, .back-row, .side-img, .top-img, .home-img { display: none; }
+    html, body { height: auto; overflow: visible; }
+    body { background-color: white; }
+    .page { overflow: visible; max-width: 100%; padding: 0; }
+    .pass-card { border: 2px solid #1f4e79; max-width: 100%; }
 }

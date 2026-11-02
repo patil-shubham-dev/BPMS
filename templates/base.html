@@ -8,22 +8,19 @@
 <body>
     <div class="navbar">
         <div class="navbar-box">
-            <!-- logo picture can be added here later,
-                 put the file in static/images first, for example:
-                 <img src="/static/images/logo.png" alt="logo"> -->
-            <span class="navbar-title">Bus Pass MS</span>
+            <span class="navbar-title">Bus Pass Management System</span>
             <div class="navbar-links">
-                <a href="{{ url_for('home') }}">Home</a>
-                <a href="{{ url_for('register') }}">Register</a>
-                <a href="{{ url_for('search') }}">Search</a>
-                <a href="{{ url_for('renew') }}">Renew</a>
-                <a href="{{ url_for('cancel') }}">Cancel</a>
-                <a href="{{ url_for('admin') }}">Admin</a>
+                <a href="{{ url_for('home') }}" {% if request.path == '/' %}class="active"{% endif %}>Home</a>
+                <a href="{{ url_for('register') }}" {% if request.path == '/register' %}class="active"{% endif %}>Register</a>
+                <a href="{{ url_for('search') }}" {% if request.path == '/search' %}class="active"{% endif %}>Search</a>
+                <a href="{{ url_for('renew') }}" {% if request.path == '/renew' %}class="active"{% endif %}>Renew</a>
+                <a href="{{ url_for('cancel') }}" {% if request.path == '/cancel' %}class="active"{% endif %}>Cancel</a>
+                <a href="{{ url_for('admin') }}" {% if request.path in ['/admin', '/admin-login'] %}class="active"{% endif %}>Admin</a>
             </div>
         </div>
     </div>
 
-    <div class="page">
+    <div class="page {% block pageclass %}{% endblock %}">
         {% block content %}{% endblock %}
     </div>
 

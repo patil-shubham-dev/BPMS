@@ -22,7 +22,7 @@ adminPass = "buspass123"
 def runProgram(*args):
     try:
         result = subprocess.run([program] + list(args), capture_output=True, text=True, cwd=folder, timeout=30)
-    except (OSError, subprocess.TimeoutExpired) as e:
+    except Exception as e:
         return "ERROR: Could not run the bus pass program: " + str(e)
 
     out = result.stdout
@@ -179,29 +179,40 @@ def search():
     return render_template("search.html", results=results, field=field, text=text)
 
 
-# renew and cancel share one flow: find the pass first, then update it.
-# command is "renew" or "cancel", extra is the second input the update step
-# needs ("months" or "reason"), alreadyNote is shown for a cancelled pass.
-def managePass(command, extra, alreadyNote):
+@app.route("/renew", methods=["GET", "POST"])
+def renew():
     student = None
     okMessages = []
     errorMessages = []
-    studentId = request.form.get("id", "")
+    studentId = ""
 
-    if request.method == "POST" and request.form.get(extra, "") != "":
-        # step 2: ID plus months/reason, so update the pass
-        result = readOutput(runProgram(command, studentId, request.form.get(extra)))
+    if request.method == "POST":
+        studentId = request.form.get("id", "")
+        monthsText = request.form.get("months", "")
 
-        if len(result["students"]) > 0:
-            student = result["students"][0]
-            okMessages = result["ok"]
-        else:
-            errorMessages = result["errors"]
+        if monthsText == "":
+            # step 1: only the ID was sent, so find the student first
             student = lookupStudent(studentId)
+
+            if student is None:
+                errorMessages = ["No student found with ID " + (studentId if studentId != "" else "(empty)")]
+            elif student["status"] == "Cancelled":
+                errorMessages = ["This pass is cancelled, cancelled passes cannot be renewed"]
+                student = None
+        else:
+            # step 2: ID and months together
+            out = runProgram("renew", studentId, monthsText)
+            result = readOutput(out)
+
+            if len(result["students"]) > 0:
+                student = result["students"][0]
+                okMessages = result["ok"]
+            else:
+                errorMessages = result["errors"]
+                student = lookupStudent(studentId)
     else:
-        # step 1: an admin row link (GET /renew?id=STU1002) or an ID-only form
-        if request.method == "GET":
-            studentId = request.args.get("id", "")
+        # an admin row link lands here: /renew?id=STU1002
+        studentId = request.args.get("id", "")
 
         if studentId != "":
             student = lookupStudent(studentId)
@@ -209,24 +220,60 @@ def managePass(command, extra, alreadyNote):
             if student is None:
                 errorMessages = ["No student found with ID " + studentId]
             elif student["status"] == "Cancelled":
-                errorMessages = [alreadyNote]
+                errorMessages = ["This pass is cancelled, cancelled passes cannot be renewed"]
                 student = None
-        elif request.method == "POST":
-            errorMessages = ["No student found with ID (empty)"]
 
     return render_template(
-        command + ".html", student=student, ok=okMessages, errors=errorMessages, studentId=studentId
+        "renew.html", student=student, ok=okMessages, errors=errorMessages, studentId=studentId
     )
-
-
-@app.route("/renew", methods=["GET", "POST"])
-def renew():
-    return managePass("renew", "months", "This pass is cancelled, cancelled passes cannot be renewed")
 
 
 @app.route("/cancel", methods=["GET", "POST"])
 def cancel():
-    return managePass("cancel", "reason", "This pass is already cancelled")
+    student = None
+    okMessages = []
+    errorMessages = []
+    studentId = ""
+
+    if request.method == "POST":
+        studentId = request.form.get("id", "")
+        reason = request.form.get("reason", "")
+
+        if reason == "":
+            # step 1: only the ID was sent
+            student = lookupStudent(studentId)
+
+            if student is None:
+                errorMessages = ["No student found with ID " + (studentId if studentId != "" else "(empty)")]
+            elif student["status"] == "Cancelled":
+                errorMessages = ["This pass is already cancelled"]
+                student = None
+        else:
+            # step 2: ID and reason together
+            out = runProgram("cancel", studentId, reason)
+            result = readOutput(out)
+
+            if len(result["students"]) > 0:
+                student = result["students"][0]
+                okMessages = result["ok"]
+            else:
+                errorMessages = result["errors"]
+    else:
+        # an admin row link lands here: /cancel?id=STU1002
+        studentId = request.args.get("id", "")
+
+        if studentId != "":
+            student = lookupStudent(studentId)
+
+            if student is None:
+                errorMessages = ["No student found with ID " + studentId]
+            elif student["status"] == "Cancelled":
+                errorMessages = ["This pass is already cancelled"]
+                student = None
+
+    return render_template(
+        "cancel.html", student=student, ok=okMessages, errors=errorMessages, studentId=studentId
+    )
 
 
 @app.route("/admin-login", methods=["GET", "POST"])

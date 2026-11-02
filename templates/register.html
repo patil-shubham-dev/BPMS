@@ -28,47 +28,69 @@
         <div class="msg msg-err">{{ e }}</div>
     {% endfor %}
 
-    <div class="form-box">
-        <h2>Register Student</h2>
-        <form action="{{ url_for('register') }}" method="post">
-            <label>Name</label>
-            <input type="text" name="name" maxlength="49" required value="{{ form.get('name', '') }}">
+    <div class="form-split">
+        <div class="form-box">
+            <h2>Register Student</h2>
+            <form action="{{ url_for('register') }}" method="post">
+                <div class="form-grid">
+                    <div class="field">
+                        <label>Name</label>
+                        <input type="text" name="name" maxlength="49" required value="{{ form.get('name', '') }}">
+                    </div>
 
-            <label>Age</label>
-            <input type="number" name="age" min="15" max="60" required value="{{ form.get('age', '') }}">
+                    <div class="field">
+                        <label>Age</label>
+                        <input type="number" name="age" min="15" max="60" required value="{{ form.get('age', '') }}">
+                    </div>
 
-            <label>College</label>
-            <input type="text" name="college" maxlength="99" required value="{{ form.get('college', '') }}">
+                    <div class="field">
+                        <label>College</label>
+                        <input type="text" name="college" maxlength="99" required value="{{ form.get('college', '') }}">
+                    </div>
 
-            <label>Course</label>
-            <select name="course" required>
-                <option value="CSE" {% if form.get('course') == 'CSE' %}selected{% endif %}>CSE</option>
-                <option value="IT" {% if form.get('course') == 'IT' %}selected{% endif %}>IT</option>
-                <option value="ECE" {% if form.get('course') == 'ECE' %}selected{% endif %}>ECE</option>
-                <option value="Mechanical" {% if form.get('course') == 'Mechanical' %}selected{% endif %}>Mechanical</option>
-                <option value="Civil" {% if form.get('course') == 'Civil' %}selected{% endif %}>Civil</option>
-                <option value="Other" {% if form.get('course') == 'Other' %}selected{% endif %}>Other</option>
-            </select>
+                    <div class="field">
+                        <label>Course</label>
+                        <select name="course" required>
+                            <option value="CSE" {% if form.get('course') == 'CSE' %}selected{% endif %}>CSE</option>
+                            <option value="IT" {% if form.get('course') == 'IT' %}selected{% endif %}>IT</option>
+                            <option value="ECE" {% if form.get('course') == 'ECE' %}selected{% endif %}>ECE</option>
+                            <option value="Mechanical" {% if form.get('course') == 'Mechanical' %}selected{% endif %}>Mechanical</option>
+                            <option value="Civil" {% if form.get('course') == 'Civil' %}selected{% endif %}>Civil</option>
+                            <option value="Other" {% if form.get('course') == 'Other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
 
-            <label>Year</label>
-            <select name="year" required>
-                <option value="1st" {% if form.get('year') == '1st' %}selected{% endif %}>1st</option>
-                <option value="2nd" {% if form.get('year') == '2nd' %}selected{% endif %}>2nd</option>
-                <option value="3rd" {% if form.get('year') == '3rd' %}selected{% endif %}>3rd</option>
-                <option value="4th" {% if form.get('year') == '4th' %}selected{% endif %}>4th</option>
-            </select>
+                    <div class="field">
+                        <label>Year</label>
+                        <select name="year" required>
+                            <option value="1st" {% if form.get('year') == '1st' %}selected{% endif %}>1st</option>
+                            <option value="2nd" {% if form.get('year') == '2nd' %}selected{% endif %}>2nd</option>
+                            <option value="3rd" {% if form.get('year') == '3rd' %}selected{% endif %}>3rd</option>
+                            <option value="4th" {% if form.get('year') == '4th' %}selected{% endif %}>4th</option>
+                        </select>
+                    </div>
 
-            <label>Mobile</label>
-            <input type="text" name="mobile" maxlength="10" pattern="[0-9]{10}" required value="{{ form.get('mobile', '') }}">
+                    <div class="field">
+                        <label>Mobile</label>
+                        <input type="text" name="mobile" maxlength="10" pattern="[0-9]{10}" required value="{{ form.get('mobile', '') }}">
+                    </div>
 
-            <label>Source</label>
-            <input type="text" name="source" maxlength="49" required value="{{ form.get('source', '') }}">
+                    <div class="field">
+                        <label>Source</label>
+                        <input type="text" name="source" maxlength="49" required value="{{ form.get('source', '') }}">
+                    </div>
 
-            <label>Destination</label>
-            <input type="text" name="destination" maxlength="49" required value="{{ form.get('destination', '') }}">
+                    <div class="field">
+                        <label>Destination</label>
+                        <input type="text" name="destination" maxlength="49" required value="{{ form.get('destination', '') }}">
+                    </div>
+                </div>
 
-            <button type="submit">Register</button>
-        </form>
+                <button type="submit">Register</button>
+            </form>
+        </div>
+
+        <img class="side-img" src="{{ url_for('static', filename='images/register.png') }}" alt="Student registration form">
     </div>
 {% endif %}
 {% endblock %}
