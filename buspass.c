@@ -1,3 +1,21 @@
+/* Bus pass management system - data side.
+
+   server.py runs this program for every action and reads the lines it prints,
+   so the commands and the output format must stay the same:
+
+     buspass.exe register name age college course year mobile source destination
+     buspass.exe search field text
+     buspass.exe renew id months
+     buspass.exe cancel id reason
+     buspass.exe list
+
+   One student is one line of students.txt: 12 fields joined by | and an
+   optional 13th reason, used only by cancelled passes:
+
+     STU1001|Name|19|College|Course|Year|Mobile|Source|Destination|Active|01-11-2026|01-02-2027
+*/
+
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,8 +41,10 @@ struct Student
     char reason[100];
 };
 
-// copy text into a struct field, keep it inside the limits
-// and remove the | symbol so the file line stays correct
+/* ---------- small helpers ---------- */
+
+/* copy value into a field, keep it inside the field size and remove | and
+   newlines so one student always stays on one line of the file */
 void setText(char *field, int size, char *value)
 {
     int i;
@@ -46,14 +66,12 @@ void setText(char *field, int size, char *value)
     }
 }
 
-// true when the text has no letters or digits at all
+/* true when the text has no letters or digits at all */
 int isBlank(char *text)
 {
-    int i;
-
-    for (i = 0; text[i] != '\0'; i++)
+    for (; *text != '\0'; text++)
     {
-        if (text[i] != ' ' && text[i] != '\t' && text[i] != '\n' && text[i] != '\r')
+        if (!isspace((unsigned char)*text))
         {
             return 0;
         }
@@ -62,14 +80,12 @@ int isBlank(char *text)
     return 1;
 }
 
-// true when every character is 0 to 9
+/* true when every character is a digit */
 int digitsOnly(char *text)
 {
-    int i;
-
-    for (i = 0; text[i] != '\0'; i++)
+    for (; *text != '\0'; text++)
     {
-        if (text[i] < '0' || text[i] > '9')
+        if (!isdigit((unsigned char)*text))
         {
             return 0;
         }
@@ -78,8 +94,7 @@ int digitsOnly(char *text)
     return 1;
 }
 
-// lowercase copy of the text, used to make search
-// work the same for big and small letters
+/* lowercase copy of the text, so search ignores capital letters */
 void makeLower(char *dst, int size, char *src)
 {
     int i;
@@ -89,16 +104,20 @@ void makeLower(char *dst, int size, char *src)
 
     for (i = 0; dst[i] != '\0'; i++)
     {
-        if (dst[i] >= 'A' && dst[i] <= 'Z')
-        {
-            dst[i] = dst[i] + 32;
-        }
+        dst[i] = tolower((unsigned char)dst[i]);
     }
 }
 
-// get the next part of a line split by |
-// returns empty text when there is nothing left
-char *nextPart()
+/* print an ERROR line, the web app shows that text to the user */
+void fail(char *text)
+{
+    printf("ERROR: %s\n", text);
+}
+
+/* ---------- reading and writing students.txt ---------- */
+
+/* next part of a line split by |, empty text when nothing is left */
+char *nextPart(void)
 {
     char *part = strtok(NULL, "|");
 
@@ -110,8 +129,7 @@ char *nextPart()
     return part;
 }
 
-// read one student line (fields joined by |) into a struct
-// the reason field is optional, only cancelled lines have it
+/* read one student line into a struct */
 void parseLine(struct Student *s, char *line)
 {
     setText(s->studentID, sizeof(s->studentID), strtok(line, "|"));
@@ -129,9 +147,7 @@ void parseLine(struct Student *s, char *line)
     setText(s->reason, sizeof(s->reason), nextPart());
 }
 
-// read all students from students.txt and return how many
-// one line looks like:
-// STU1001|Name|19|College|Course|Year|Mobile|Source|Destination|Active|01-11-2026|01-02-2027
+/* read all students and return how many were found */
 int loadStudents(struct Student list[])
 {
     int count = 0;
@@ -160,7 +176,24 @@ int loadStudents(struct Student list[])
     return count;
 }
 
-// write all the students back to students.txt
+/* write one student as a | line. the same function is used for the file
+   and for the screen, so the two can never drift apart */
+void writeStudent(FILE *out, struct Student *s)
+{
+    fprintf(out, "%s|%s|%d|%s|%s|%s|%s|%s|%s|%s|%s|%s",
+            s->studentID, s->name, s->age, s->college, s->course, s->year,
+            s->mobile, s->source, s->destination, s->status,
+            s->issueDate, s->expiryDate);
+
+    if (s->reason[0] != '\0')
+    {
+        fprintf(out, "|%s", s->reason);
+    }
+
+    fprintf(out, "\n");
+}
+
+/* rewrite the whole file, used after a renew or a cancel */
 void saveStudents(struct Student list[], int count)
 {
     int i;
@@ -168,51 +201,25 @@ void saveStudents(struct Student list[], int count)
 
     if (fp == NULL)
     {
-        printf("ERROR: Cannot open students.txt\n");
+        fail("Cannot open students.txt");
         return;
     }
 
     for (i = 0; i < count; i++)
     {
-        fprintf(fp, "%s|%s|%d|%s|%s|%s|%s|%s|%s|%s|%s|%s",
-                list[i].studentID, list[i].name, list[i].age, list[i].college,
-                list[i].course, list[i].year, list[i].mobile, list[i].source,
-                list[i].destination, list[i].status, list[i].issueDate,
-                list[i].expiryDate);
-
-        if (list[i].reason[0] != '\0')
-        {
-            fprintf(fp, "|%s", list[i].reason);
-        }
-
-        fprintf(fp, "\n");
+        writeStudent(fp, &list[i]);
     }
 
     fclose(fp);
 }
 
-// show one student as a single | line, the format python reads
-void printStudentData(struct Student *s)
-{
-    printf("%s|%s|%d|%s|%s|%s|%s|%s|%s|%s|%s|%s",
-           s->studentID, s->name, s->age, s->college, s->course, s->year,
-           s->mobile, s->source, s->destination, s->status,
-           s->issueDate, s->expiryDate);
+/* ---------- dates (all dates are dd-mm-yyyy text) ---------- */
 
-    if (s->reason[0] != '\0')
-    {
-        printf("|%s", s->reason);
-    }
-
-    printf("\n");
-}
-
-// turn "dd-mm-yyyy" into a date number, -1 when the text is not a date
+/* date as a number, -1 when the text is not a date */
 time_t parseDate(char *text)
 {
     struct tm t = {0};
     int day, month, year;
-    time_t result;
 
     if (sscanf(text, "%d-%d-%d", &day, &month, &year) != 3)
     {
@@ -228,11 +235,10 @@ time_t parseDate(char *text)
     t.tm_mon = month - 1;
     t.tm_year = year - 1900;
 
-    result = mktime(&t);
-    return result;
+    return mktime(&t);
 }
 
-// write today's date into dst, format dd-mm-yyyy
+/* today's date into dst */
 void todayText(char *dst, int size)
 {
     struct tm *t;
@@ -242,8 +248,8 @@ void todayText(char *dst, int size)
     snprintf(dst, size, "%02d-%02d-%04d", t->tm_mday, t->tm_mon + 1, t->tm_year + 1900);
 }
 
-// add months to one date and write the new date into dst
-// mktime fixes the sum by itself when the month goes past december
+/* add months to a date and write the result into dst.
+   mktime fixes the month by itself when it goes past december */
 void addMonths(char *dst, int size, char *fromDate, int months)
 {
     struct tm *t;
@@ -261,8 +267,42 @@ void addMonths(char *dst, int size, char *fromDate, int months)
     snprintf(dst, size, "%02d-%02d-%04d", t->tm_mday, t->tm_mon + 1, t->tm_year + 1900);
 }
 
-// put the next free ID into dst. it continues from the biggest
-// ID in the file, so it never repeats after a restart
+/* ---------- lookups ---------- */
+
+/* position of a student by ID, -1 when not found */
+int findStudent(struct Student list[], int count, char *id)
+{
+    int i;
+
+    for (i = 0; i < count; i++)
+    {
+        if (strcmp(list[i].studentID, id) == 0)
+        {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+/* position of a student by mobile number, used to block duplicates */
+int findMobile(struct Student list[], int count, char *mobile)
+{
+    int i;
+
+    for (i = 0; i < count; i++)
+    {
+        if (strcmp(list[i].mobile, mobile) == 0)
+        {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+/* next free ID into dst. it continues from the biggest ID in the file,
+   so it never repeats after a restart */
 void nextStudentID(char *dst, struct Student list[], int count)
 {
     int i;
@@ -281,178 +321,8 @@ void nextStudentID(char *dst, struct Student list[], int count)
     sprintf(dst, "STU%d", number + 1);
 }
 
-// find a student by Student ID, return position or -1 if not found
-int findStudent(struct Student list[], int count, char *id)
-{
-    int i;
-
-    for (i = 0; i < count; i++)
-    {
-        if (strcmp(list[i].studentID, id) == 0)
-        {
-            return i;
-        }
-    }
-
-    return -1;
-}
-
-// find a student by mobile number, used to block duplicates
-int findMobile(struct Student list[], int count, char *mobile)
-{
-    int i;
-
-    for (i = 0; i < count; i++)
-    {
-        if (strcmp(list[i].mobile, mobile) == 0)
-        {
-            return i;
-        }
-    }
-
-    return -1;
-}
-
-// check the fields of a new student and add it to the file.
-// fills errorText when something is wrong, so the caller can show it
-// status = Active, issue date = today, expiry = today + 3 months
-int addStudent(struct Student list[], int count, struct Student *s, char *errorText)
-{
-    FILE *fp;
-
-    if (count >= MAX)
-    {
-        strcpy(errorText, "Sorry, student limit reached");
-        return 1;
-    }
-
-    if (isBlank(s->name) || s->age <= 0 || isBlank(s->college) || isBlank(s->course) ||
-        isBlank(s->year) || isBlank(s->mobile) || isBlank(s->source) || isBlank(s->destination))
-    {
-        strcpy(errorText, "All fields are required");
-        return 1;
-    }
-
-    if (s->age < 15 || s->age > 60)
-    {
-        strcpy(errorText, "Age must be between 15 and 60");
-        return 1;
-    }
-
-    if (strlen(s->mobile) != 10 || digitsOnly(s->mobile) == 0)
-    {
-        strcpy(errorText, "Mobile must be exactly 10 digits");
-        return 1;
-    }
-
-    if (findMobile(list, count, s->mobile) != -1)
-    {
-        strcpy(errorText, "Mobile number is already registered");
-        return 1;
-    }
-
-    nextStudentID(s->studentID, list, count);
-    setText(s->status, sizeof(s->status), "Active");
-    todayText(s->issueDate, sizeof(s->issueDate));
-    addMonths(s->expiryDate, sizeof(s->expiryDate), s->issueDate, 3);
-    s->reason[0] = '\0';
-
-    // append mode so the old students are not lost
-    fp = fopen("students.txt", "a");
-    if (fp == NULL)
-    {
-        strcpy(errorText, "Cannot open students.txt");
-        return 1;
-    }
-
-    fprintf(fp, "%s|%s|%d|%s|%s|%s|%s|%s|%s|%s|%s|%s\n",
-            s->studentID, s->name, s->age, s->college, s->course, s->year,
-            s->mobile, s->source, s->destination, s->status,
-            s->issueDate, s->expiryDate);
-    fclose(fp);
-
-    list[count] = *s;
-    return 0;
-}
-
-// renew one pass: the new expiry starts from the old expiry, or
-// from today when the pass already expired. returns position or -1
-int renewPass(struct Student list[], int count, char *id, int months, char *errorText)
-{
-    int index;
-    char baseDate[15];
-
-    index = findStudent(list, count, id);
-
-    if (index == -1)
-    {
-        sprintf(errorText, "No student found with ID %s", id);
-        return -1;
-    }
-
-    // a cancelled pass cannot come back
-    if (strcmp(list[index].status, "Cancelled") == 0)
-    {
-        strcpy(errorText, "This pass is cancelled, cancelled passes cannot be renewed");
-        return -1;
-    }
-
-    if (months != 1 && months != 3 && months != 6 && months != 12)
-    {
-        strcpy(errorText, "Months must be 1, 3, 6 or 12");
-        return -1;
-    }
-
-    // time left in the old expiry is kept, otherwise start from today
-    if (parseDate(list[index].expiryDate) < time(NULL))
-    {
-        todayText(baseDate, sizeof(baseDate));
-    }
-    else
-    {
-        setText(baseDate, sizeof(baseDate), list[index].expiryDate);
-    }
-
-    addMonths(list[index].expiryDate, sizeof(list[index].expiryDate), baseDate, months);
-    setText(list[index].status, sizeof(list[index].status), "Active");
-    saveStudents(list, count);
-
-    return index;
-}
-
-// cancel one pass: the line stays in the file, only the status
-// and the reason change. the reason is saved as the last field
-int cancelPass(struct Student list[], int count, char *id, char *reason, char *errorText)
-{
-    int index = findStudent(list, count, id);
-
-    if (index == -1)
-    {
-        sprintf(errorText, "No student found with ID %s", id);
-        return -1;
-    }
-
-    if (strcmp(list[index].status, "Cancelled") == 0)
-    {
-        strcpy(errorText, "This pass is already cancelled");
-        return -1;
-    }
-
-    if (isBlank(reason))
-    {
-        strcpy(errorText, "A reason is required to cancel a pass");
-        return -1;
-    }
-
-    setText(list[index].status, sizeof(list[index].status), "Cancelled");
-    setText(list[index].reason, sizeof(list[index].reason), reason);
-    saveStudents(list, count);
-
-    return index;
-}
-
-// does the student match the chosen field? the text can be a part
-// of the value and both sides ignore capital and small letters
+/* does the student match the chosen field? the text can be a part of the
+   value and both sides ignore capital letters */
 int fieldMatches(struct Student *s, char *field, char *text)
 {
     char textLower[200];
@@ -495,7 +365,144 @@ int fieldMatches(struct Student *s, char *field, char *text)
     return strstr(valueLower, textLower) != NULL;
 }
 
-// command mode: register name age college course year mobile source destination
+/* ---------- the four operations ---------- */
+
+/* check a new student and add it to the file.
+   status = Active, issue date = today, expiry = today + 3 months.
+   on a problem the reason is copied into errorText and 1 is returned */
+int addStudent(struct Student list[], int count, struct Student *s, char *errorText)
+{
+    FILE *fp;
+
+    if (count >= MAX)
+    {
+        strcpy(errorText, "Sorry, student limit reached");
+        return 1;
+    }
+
+    if (isBlank(s->name) || s->age <= 0 || isBlank(s->college) || isBlank(s->course) ||
+        isBlank(s->year) || isBlank(s->mobile) || isBlank(s->source) || isBlank(s->destination))
+    {
+        strcpy(errorText, "All fields are required");
+        return 1;
+    }
+
+    if (s->age < 15 || s->age > 60)
+    {
+        strcpy(errorText, "Age must be between 15 and 60");
+        return 1;
+    }
+
+    if (strlen(s->mobile) != 10 || digitsOnly(s->mobile) == 0)
+    {
+        strcpy(errorText, "Mobile must be exactly 10 digits");
+        return 1;
+    }
+
+    if (findMobile(list, count, s->mobile) != -1)
+    {
+        strcpy(errorText, "Mobile number is already registered");
+        return 1;
+    }
+
+    nextStudentID(s->studentID, list, count);
+    setText(s->status, sizeof(s->status), "Active");
+    todayText(s->issueDate, sizeof(s->issueDate));
+    addMonths(s->expiryDate, sizeof(s->expiryDate), s->issueDate, 3);
+    s->reason[0] = '\0';
+
+    // append mode, so the old students are not lost
+    fp = fopen("students.txt", "a");
+
+    if (fp == NULL)
+    {
+        strcpy(errorText, "Cannot open students.txt");
+        return 1;
+    }
+
+    writeStudent(fp, s);
+    fclose(fp);
+
+    return 0;
+}
+
+/* renew a pass. the new expiry counts from the old expiry, or from today
+   when the pass already expired. returns the position in the list or -1 */
+int renewPass(struct Student list[], int count, char *id, int months, char *errorText)
+{
+    int index;
+    char baseDate[15];
+
+    index = findStudent(list, count, id);
+
+    if (index == -1)
+    {
+        sprintf(errorText, "No student found with ID %s", id);
+        return -1;
+    }
+
+    // a cancelled pass cannot come back
+    if (strcmp(list[index].status, "Cancelled") == 0)
+    {
+        strcpy(errorText, "This pass is cancelled, cancelled passes cannot be renewed");
+        return -1;
+    }
+
+    if (months != 1 && months != 3 && months != 6 && months != 12)
+    {
+        strcpy(errorText, "Months must be 1, 3, 6 or 12");
+        return -1;
+    }
+
+    if (parseDate(list[index].expiryDate) < time(NULL))
+    {
+        todayText(baseDate, sizeof(baseDate));
+    }
+    else
+    {
+        setText(baseDate, sizeof(baseDate), list[index].expiryDate);
+    }
+
+    addMonths(list[index].expiryDate, sizeof(list[index].expiryDate), baseDate, months);
+    setText(list[index].status, sizeof(list[index].status), "Active");
+    saveStudents(list, count);
+
+    return index;
+}
+
+/* cancel a pass. the line stays in the file, only the status and the
+   reason change. returns the position in the list or -1 */
+int cancelPass(struct Student list[], int count, char *id, char *reason, char *errorText)
+{
+    int index = findStudent(list, count, id);
+
+    if (index == -1)
+    {
+        sprintf(errorText, "No student found with ID %s", id);
+        return -1;
+    }
+
+    if (strcmp(list[index].status, "Cancelled") == 0)
+    {
+        strcpy(errorText, "This pass is already cancelled");
+        return -1;
+    }
+
+    if (isBlank(reason))
+    {
+        strcpy(errorText, "A reason is required to cancel a pass");
+        return -1;
+    }
+
+    setText(list[index].status, sizeof(list[index].status), "Cancelled");
+    setText(list[index].reason, sizeof(list[index].reason), reason);
+    saveStudents(list, count);
+
+    return index;
+}
+
+/* ---------- the five commands, one per argv[1] ---------- */
+
 void runRegister(struct Student list[], int count, char *args[], int argCount)
 {
     struct Student s;
@@ -503,7 +510,7 @@ void runRegister(struct Student list[], int count, char *args[], int argCount)
 
     if (argCount != 8)
     {
-        printf("ERROR: register needs 8 values: name age college course year mobile source destination\n");
+        fail("register needs 8 values: name age college course year mobile source destination");
         return;
     }
 
@@ -518,15 +525,14 @@ void runRegister(struct Student list[], int count, char *args[], int argCount)
 
     if (addStudent(list, count, &s, errorText) != 0)
     {
-        printf("ERROR: %s\n", errorText);
+        fail(errorText);
         return;
     }
 
-    printStudentData(&s);
+    writeStudent(stdout, &s);
     printf("OK: Registered\n");
 }
 
-// command mode: search field text, field is id, name, course, source or destination
 void runSearch(struct Student list[], int count, char *args[], int argCount)
 {
     int i;
@@ -536,7 +542,7 @@ void runSearch(struct Student list[], int count, char *args[], int argCount)
 
     if (argCount != 2)
     {
-        printf("ERROR: search needs a field (id, name, course, source, destination) and text\n");
+        fail("search needs a field (id, name, course, source, destination) and text");
         return;
     }
 
@@ -545,7 +551,7 @@ void runSearch(struct Student list[], int count, char *args[], int argCount)
 
     if (isBlank(text))
     {
-        printf("ERROR: Search text is empty\n");
+        fail("Search text is empty");
         return;
     }
 
@@ -553,7 +559,7 @@ void runSearch(struct Student list[], int count, char *args[], int argCount)
     {
         if (fieldMatches(&list[i], field, text))
         {
-            printStudentData(&list[i]);
+            writeStudent(stdout, &list[i]);
             found = 1;
         }
     }
@@ -564,7 +570,6 @@ void runSearch(struct Student list[], int count, char *args[], int argCount)
     }
 }
 
-// command mode: renew id months
 void runRenew(struct Student list[], int count, char *args[], int argCount)
 {
     char errorText[100];
@@ -573,7 +578,7 @@ void runRenew(struct Student list[], int count, char *args[], int argCount)
 
     if (argCount != 2)
     {
-        printf("ERROR: renew needs a Student ID and months (1, 3, 6 or 12)\n");
+        fail("renew needs a Student ID and months (1, 3, 6 or 12)");
         return;
     }
 
@@ -582,16 +587,15 @@ void runRenew(struct Student list[], int count, char *args[], int argCount)
 
     if (index == -1)
     {
-        printf("ERROR: %s\n", errorText);
+        fail(errorText);
         return;
     }
 
-    printStudentData(&list[index]);
-    printf("OK: Renewed %s for %d months. Fee = %d. New expiry = %s\n",
+    writeStudent(stdout, &list[index]);
+    printf("OK: Renewed %s for %d months. Fee = Rs %d. New expiry = %s\n",
            list[index].studentID, months, months * FEE_PER_MONTH, list[index].expiryDate);
 }
 
-// command mode: cancel id reason (the reason can have spaces)
 void runCancel(struct Student list[], int count, char *args[], int argCount)
 {
     char errorText[100];
@@ -599,7 +603,7 @@ void runCancel(struct Student list[], int count, char *args[], int argCount)
 
     if (argCount != 2)
     {
-        printf("ERROR: cancel needs a Student ID and a reason\n");
+        fail("cancel needs a Student ID and a reason");
         return;
     }
 
@@ -607,22 +611,21 @@ void runCancel(struct Student list[], int count, char *args[], int argCount)
 
     if (index == -1)
     {
-        printf("ERROR: %s\n", errorText);
+        fail(errorText);
         return;
     }
 
-    printStudentData(&list[index]);
-    printf("OK: Cancelled %s\n", list[index].studentID);
+    writeStudent(stdout, &list[index]);
+    printf("OK: Cancelled pass %s\n", list[index].studentID);
 }
 
-// command mode: list, print every student line
 void runList(struct Student list[], int count)
 {
     int i;
 
     for (i = 0; i < count; i++)
     {
-        printStudentData(&list[i]);
+        writeStudent(stdout, &list[i]);
     }
 }
 
@@ -633,40 +636,35 @@ int main(int argc, char *argv[])
 
     if (argc < 2)
     {
-        printf("ERROR: Missing command. Use register, search, renew, cancel or list\n");
+        fail("Missing command. Use register, search, renew, cancel or list");
         return 1;
     }
 
     if (strcmp(argv[1], "register") == 0)
     {
         runRegister(list, count, &argv[2], argc - 2);
-        return 0;
     }
-
-    if (strcmp(argv[1], "search") == 0)
+    else if (strcmp(argv[1], "search") == 0)
     {
         runSearch(list, count, &argv[2], argc - 2);
-        return 0;
     }
-
-    if (strcmp(argv[1], "renew") == 0)
+    else if (strcmp(argv[1], "renew") == 0)
     {
         runRenew(list, count, &argv[2], argc - 2);
-        return 0;
     }
-
-    if (strcmp(argv[1], "cancel") == 0)
+    else if (strcmp(argv[1], "cancel") == 0)
     {
         runCancel(list, count, &argv[2], argc - 2);
-        return 0;
     }
-
-    if (strcmp(argv[1], "list") == 0)
+    else if (strcmp(argv[1], "list") == 0)
     {
         runList(list, count);
-        return 0;
+    }
+    else
+    {
+        fail("Unknown command. Use register, search, renew, cancel or list");
+        return 1;
     }
 
-    printf("ERROR: Unknown command. Use register, search, renew, cancel or list\n");
-    return 1;
+    return 0;
 }

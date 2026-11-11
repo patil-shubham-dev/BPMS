@@ -9,7 +9,6 @@
     <div class="form-card">
         <h2>Search by</h2>
         <form action="{{ url_for('search') }}" method="post">
-            <label>Search by</label>
             <select name="field">
                 <option value="id" {% if field == 'id' %}selected{% endif %}>Student ID</option>
                 <option value="name" {% if field == 'name' %}selected{% endif %}>Name</option>

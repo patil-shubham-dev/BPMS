@@ -47,57 +47,45 @@
         <div class="form-card">
             <form action="{{ url_for('register') }}" method="post">
                 <div class="form-grid">
-                    <div class="field">
-                        <label>Name</label>
+                    <label>Name
                         <input type="text" name="name" maxlength="49" required value="{{ form.get('name', '') }}">
-                    </div>
+                    </label>
 
-                    <div class="field">
-                        <label>Age</label>
+                    <label>Age
                         <input type="number" name="age" min="15" max="60" required value="{{ form.get('age', '') }}">
-                    </div>
+                    </label>
 
-                    <div class="field">
-                        <label>College</label>
+                    <label>College
                         <input type="text" name="college" maxlength="99" required value="{{ form.get('college', '') }}">
-                    </div>
+                    </label>
 
-                    <div class="field">
-                        <label>Course</label>
+                    <label>Course
                         <select name="course" required>
-                            <option value="CSE" {% if form.get('course') == 'CSE' %}selected{% endif %}>CSE</option>
-                            <option value="IT" {% if form.get('course') == 'IT' %}selected{% endif %}>IT</option>
-                            <option value="ECE" {% if form.get('course') == 'ECE' %}selected{% endif %}>ECE</option>
-                            <option value="Mechanical" {% if form.get('course') == 'Mechanical' %}selected{% endif %}>Mechanical</option>
-                            <option value="Civil" {% if form.get('course') == 'Civil' %}selected{% endif %}>Civil</option>
-                            <option value="Other" {% if form.get('course') == 'Other' %}selected{% endif %}>Other</option>
+                            {% for c in ['CSE', 'IT', 'ECE', 'Mechanical', 'Civil', 'Other'] %}
+                                <option value="{{ c }}" {% if form.get('course') == c %}selected{% endif %}>{{ c }}</option>
+                            {% endfor %}
                         </select>
-                    </div>
+                    </label>
 
-                    <div class="field">
-                        <label>Year</label>
+                    <label>Year
                         <select name="year" required>
-                            <option value="1st" {% if form.get('year') == '1st' %}selected{% endif %}>1st</option>
-                            <option value="2nd" {% if form.get('year') == '2nd' %}selected{% endif %}>2nd</option>
-                            <option value="3rd" {% if form.get('year') == '3rd' %}selected{% endif %}>3rd</option>
-                            <option value="4th" {% if form.get('year') == '4th' %}selected{% endif %}>4th</option>
+                            {% for y in ['1st', '2nd', '3rd', '4th'] %}
+                                <option value="{{ y }}" {% if form.get('year') == y %}selected{% endif %}>{{ y }}</option>
+                            {% endfor %}
                         </select>
-                    </div>
+                    </label>
 
-                    <div class="field">
-                        <label>Mobile</label>
+                    <label>Mobile
                         <input type="text" name="mobile" maxlength="10" pattern="[0-9]{10}" required value="{{ form.get('mobile', '') }}">
-                    </div>
+                    </label>
 
-                    <div class="field">
-                        <label>Source</label>
+                    <label>Source
                         <input type="text" name="source" maxlength="49" required value="{{ form.get('source', '') }}">
-                    </div>
+                    </label>
 
-                    <div class="field">
-                        <label>Destination</label>
+                    <label>Destination
                         <input type="text" name="destination" maxlength="49" required value="{{ form.get('destination', '') }}">
-                    </div>
+                    </label>
                 </div>
 
                 <button type="submit">Register</button>
